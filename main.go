@@ -1,8 +1,9 @@
 package main
 
 import (
-	"model"
 	"time"
+
+	"github.com/KRVPerera/DistributedJobRaft/model"
 )
 
 // CreateSocket creates a socket for communication in the distributed system
