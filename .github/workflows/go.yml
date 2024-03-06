@@ -22,7 +22,7 @@ jobs:
         go-version: '1.20'
 
     - name: Build
-      run: go build -v raft
+      run: go build -v ./raft
 
     - name: Test
-      run: go test -v raft
+      run: go test -v ./raft
