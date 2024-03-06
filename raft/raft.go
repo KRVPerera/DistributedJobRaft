@@ -16,6 +16,20 @@ import (
 
 const DebugCM = 1
 
+// CommitEntry is the data reported by Raft to the commit channel. Each commit
+// entry notifies the client that consensus was reached on a command and it can
+// be applied to the client's state machine.
+type CommitEntry struct {
+	// Command is the client command being committed.
+	Command interface{}
+
+	// Index is the log index at which the client command is committed.
+	Index int
+
+	// Term is the Raft term at which the client command is committed.
+	Term int
+}
+
 type LogEntry struct {
 	Command interface{}
 	Term    int
