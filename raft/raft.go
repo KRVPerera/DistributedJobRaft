@@ -218,10 +218,10 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 
 // electionTimeout generates a pseudo-random election timeout duration.
 func (cm *ConsensusModule) electionTimeout() time.Duration {
-	// If RAFT_FORCE_MORE_REELECTION is set, stress-test by deliberately
-	// generating a hard-coded number very often. This will create collisions
-	// between different servers and force more re-elections.
-	if len(os.Getenv("RAFT_FORCE_MORE_REELECTION")) > 0 && rand.Intn(3) == 0 {
+	/* RAFT_FORCE_SAME_ELECTION_TIMEOUT is for testing only. This will make every nodes election timeout to be the same.
+	* nodes wait for this time and if the leader does not send a heartbeat, they will start an election.
+	 */
+	if len(os.Getenv("RAFT_FORCE_SAME_ELECTION_TIMEOUT")) > 0 && rand.Intn(3) == 0 {
 		return time.Duration(150) * time.Millisecond
 	} else {
 		return time.Duration(150+rand.Intn(150)) * time.Millisecond
@@ -234,6 +234,7 @@ func (cm *ConsensusModule) electionTimeout() time.Duration {
 // This function is blocking and should be launched in a separate goroutine;
 // it's designed to work for a single (one-shot) election timer, as it exits
 // whenever the CM state changes from follower/candidate or the term changes.
+// Rukshan : This runs a loop every 10ms, checking if the election timer has expired.
 func (cm *ConsensusModule) runElectionTimer() {
 	timeoutDuration := cm.electionTimeout()
 	cm.mu.Lock()
