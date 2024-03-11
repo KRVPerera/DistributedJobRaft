@@ -51,3 +51,6 @@ replay_pid*
 go.work
 
 # End of https://www.toptal.com/developers/gitignore/api/go
+
+workspace.xml
+usage.statistics.xml
