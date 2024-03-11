@@ -315,6 +315,7 @@ func (cm *ConsensusModule) startElection() {
 				} else if reply.Term == savedCurrentTerm {
 					if reply.VoteGranted {
 						votesReceived += 1
+						// check if we have received majority votes
 						if votesReceived*2 > len(cm.peerIds)+1 {
 							// Won the election!
 							cm.dlog("wins election with %d votes", votesReceived)
