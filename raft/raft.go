@@ -228,13 +228,13 @@ func (cm *ConsensusModule) electionTimeout() time.Duration {
 	}
 }
 
-// runElectionTimer implements an election timer. It should be launched whenever
-// we want to start a timer towards becoming a candidate in a new election.
-//
-// This function is blocking and should be launched in a separate goroutine;
-// it's designed to work for a single (one-shot) election timer, as it exits
-// whenever the CM state changes from follower/candidate or the term changes.
-// Rukshan : This runs a loop every 10ms, checking if the election timer has expired.
+/* runElectionTimer implements an election timer. It should be launched whenever
+* we want to start a timer towards becoming a candidate in a new election. This function is blocking and should be
+* launched in a separate goroutine; it's designed to work for a single (one-shot) election timer, as it exits whenever
+* the CM state changes from follower/candidate or the term changes.
+* Rukshan : This runs a loop every 10ms, checking if the election timer has expired. If expired followers can become a
+* candidate and start an election.
+ */
 func (cm *ConsensusModule) runElectionTimer() {
 	timeoutDuration := cm.electionTimeout()
 	cm.mu.Lock()
