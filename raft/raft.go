@@ -115,6 +115,24 @@ func (cm *ConsensusModule) Report() (id int, term int, isLeader bool) {
 	return cm.id, cm.currentTerm, cm.state == Leader
 }
 
+// Submit submits a new command to the CM. This function doesn't block; clients
+// read the commit channel passed in the constructor to be notified of new
+// committed entries. It returns true iff this CM is the leader - in which case
+// the command is accepted. If false is returned, the client will have to find
+// a different CM to submit this command to.
+func (cm *ConsensusModule) Submit(command interface{}) bool {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	cm.dlog("Submit received by %v: %v", cm.state, command)
+	if cm.state == Leader {
+		cm.log = append(cm.log, LogEntry{Command: command, Term: cm.currentTerm})
+		cm.dlog("... log=%v", cm.log)
+		return true
+	}
+	return false
+}
+
 // Stop stops this CM, cleaning up its state. This method returns quickly, but
 // it may take a bit of time (up to ~election timeout) for all goroutines to
 // exit.
@@ -204,6 +222,10 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 
 	reply.Success = false
 	if args.Term == cm.currentTerm {
+		/**
+		* A leader has called this RPC,
+		* that means we cannot be a leader. So we should become a follower if we are not already.
+		 */
 		if cm.state != Follower {
 			cm.becomeFollower(args.Term)
 		}
@@ -304,11 +326,14 @@ func (cm *ConsensusModule) startElection() {
 				cm.dlog("received RequestVoteReply %+v", reply)
 
 				if cm.state != Candidate {
+					// We may have won the election with other votes, so already leader
+					// We have become a follower because another RPC called received a higher term
 					cm.dlog("while waiting for reply, state = %v", cm.state)
 					return
 				}
 
 				if reply.Term > savedCurrentTerm {
+					// someone else has a higher term, so we should become a follower
 					cm.dlog("term out of date in RequestVoteReply")
 					cm.becomeFollower(reply.Term)
 					return
@@ -328,7 +353,7 @@ func (cm *ConsensusModule) startElection() {
 		}(peerId)
 	}
 
-	// Run another election timer, in case this election is not successful.
+	// Run another election timer, in case this election is not successful or not fruitful
 	go cm.runElectionTimer()
 }
 
@@ -345,7 +370,8 @@ func (cm *ConsensusModule) becomeFollower(term int) {
 }
 
 // startLeader switches cm into a leader state and begins process of heartbeats.
-// Expects cm.mu to be locked.
+// Expects cm.mu to be locked. ??
+// send heartbeats to all peers for every 50ms
 func (cm *ConsensusModule) startLeader() {
 	cm.state = Leader
 	cm.dlog("becomes Leader; term=%d, log=%v", cm.currentTerm, cm.log)
