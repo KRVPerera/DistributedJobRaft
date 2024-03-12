@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/KRVPerera/DistributedJobRaft/model"
@@ -11,16 +12,6 @@ func CreateSocket() {
 	// Implement socket creation logic here
 }
 
-// SendMessage sends a message to the distributed system
-func SendMessage(msg model.Message) {
-	// Implement message sending logic here
-}
-
-// ProcessMessage processes a received message in the distributed system
-func ProcessMessage(msg model.Message) {
-	// Implement message processing logic here
-}
-
 // SubmitJob submits a job to the job queue
 func SubmitJob(job model.Job) {
 	// Implement job submission logic here
@@ -29,26 +20,6 @@ func SubmitJob(job model.Job) {
 // ProcessJobs processes the job queue periodically
 func ProcessJobs() {
 	// Implement job processing logic here
-}
-
-// ProcessMessages processes messages from the local queue
-func (n *model.Node) ProcessMessages() {
-	// Implement message processing logic here
-}
-
-// SubmitJob submits a job to the job queue
-func (n *model.Node) SubmitJob(job Job) {
-	// Implement job submission logic here
-}
-
-// ProcessJobs processes jobs from the job queue
-func (n *model.Node) ProcessJobs() {
-	// Implement job processing logic here
-}
-
-// TimedTask represents a timed task that processes the job queue
-func (n *model.Node) TimedTask() {
-	// Implement timed task logic here
 }
 
 func main() {
@@ -75,6 +46,7 @@ func main() {
 
 	// Keep the main goroutine running
 	for {
+		fmt.Println("Hello world")
 		time.Sleep(time.Second)
 	}
 
@@ -94,4 +66,5 @@ func main() {
 	// 	// Process the received message
 	// 	ProcessMessage(msg)
 	// }
+
 }
