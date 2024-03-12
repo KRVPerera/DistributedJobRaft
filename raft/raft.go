@@ -2,6 +2,7 @@
 //
 // Eli Bendersky [https://eli.thegreenplace.net]
 // This code is in the public domain.
+// Maintained By : Rukshan Perera [https://www.krvperera.com]
 package raft
 
 import (
@@ -31,16 +32,16 @@ type CommitEntry struct {
 	Term int
 }
 
-type CMState int
+type RaftNodeState int
 
 const (
-	Follower CMState = iota
+	Follower RaftNodeState = iota
 	Candidate
 	Leader
 	Dead
 )
 
-func (s CMState) String() string {
+func (s RaftNodeState) String() string {
 	switch s {
 	case Follower:
 		return "Follower"
@@ -87,24 +88,25 @@ type ConsensusModule struct {
 	// on commitChan.
 	newCommitReadyChan chan struct{}
 
-	// triggerAEChan is an internal notification channel used to trigger
-	// sending new AEs to followers when interesting changes occurred.
-	triggerAEChan chan struct{}
+	// triggerAppendEntriesChan is an internal notification channel used to trigger
+	// sending new AppendEntries to followers when interesting changes occurred.
+	triggerAppendEntriesChan chan struct{}
 
 	// Persistent Raft state on all servers
-	currentTerm int
-	votedFor    int
-	log         []LogEntry
+	currentTerm int        // Latest term server has seen
+	votedFor    int        // CandidateId that received vote in current term
+	log         []LogEntry // Log entries; each entry contains command for state machine, and
+	// term when entry was received by leader
 
-	// Volatile Raft state on all servers
-	commitIndex        int
-	lastApplied        int
-	state              CMState
+	// Volatile state on all servers
+	commitIndex        int // Index of highest log entry known to be committed
+	lastApplied        int // Index of highest log entry applied to state machine
+	state              RaftNodeState
 	electionResetEvent time.Time
 
-	// Volatile Raft state on leaders
-	nextIndex  map[int]int
-	matchIndex map[int]int
+	// Volatile state on leaders
+	nextIndex  map[int]int // For each server, index of the next log entry to send to that server
+	matchIndex map[int]int // For each server, index of the highest log entry known to be replicated on server
 }
 
 // NewConsensusModule creates a new CM with the given ID, list of peer IDs and
@@ -119,7 +121,7 @@ func NewConsensusModule(id int, peerIds []int, server *Server, storage Storage, 
 	cm.storage = storage
 	cm.commitChan = commitChan
 	cm.newCommitReadyChan = make(chan struct{}, 16)
-	cm.triggerAEChan = make(chan struct{}, 1)
+	cm.triggerAppendEntriesChan = make(chan struct{}, 1)
 	cm.state = Follower
 	cm.votedFor = -1
 	cm.commitIndex = -1
@@ -165,7 +167,7 @@ func (cm *ConsensusModule) Submit(command interface{}) bool {
 		cm.persistToStorage()
 		cm.dlog("... log=%v", cm.log)
 		cm.mu.Unlock()
-		cm.triggerAEChan <- struct{}{}
+		cm.triggerAppendEntriesChan <- struct{}{}
 		return true
 	}
 
@@ -245,15 +247,15 @@ func (cm *ConsensusModule) dlog(format string, args ...interface{}) {
 
 // See figure 2 in the paper.
 type RequestVoteArgs struct {
-	Term         int
-	CandidateId  int
-	LastLogIndex int
-	LastLogTerm  int
+	Term         int // candidate's term
+	CandidateId  int // candidate requesting vote
+	LastLogIndex int // index of candidate's last log entry
+	LastLogTerm  int // term of candidate's last log entry
 }
 
 type RequestVoteReply struct {
-	Term        int
-	VoteGranted bool
+	Term        int  // currentTerm, for candidate to update itself
+	VoteGranted bool // true means candidate received vote
 }
 
 // RequestVote RPC.
@@ -489,11 +491,19 @@ func (cm *ConsensusModule) startElection() {
 				defer cm.mu.Unlock()
 				cm.dlog("received RequestVoteReply %+v", reply)
 
+				/*
+				* We may have already won the election because we got enough votes from other RPC calls
+				* May be another RPC called replied with a term higher than our current term making us a follower
+				* this happens below. Therefore, we need to check if we are still a candidate.
+				 */
 				if cm.state != Candidate {
 					cm.dlog("while waiting for reply, state = %v", cm.state)
 					return
 				}
 
+				/*
+				* This indicates that there is a new leader which also means another candidate may have won.
+				 */
 				if reply.Term > savedCurrentTerm {
 					cm.dlog("term out of date in RequestVoteReply")
 					cm.becomeFollower(reply.Term)
@@ -540,12 +550,12 @@ func (cm *ConsensusModule) startLeader() {
 	}
 	cm.dlog("becomes Leader; term=%d, nextIndex=%v, matchIndex=%v; log=%v", cm.currentTerm, cm.nextIndex, cm.matchIndex, cm.log)
 
-	// This goroutine runs in the background and sends AEs to peers:
-	// * Whenever something is sent on triggerAEChan
-	// * ... Or every 50 ms, if no events occur on triggerAEChan
+	// This goroutine runs in the background and sends AppendEntries to peers:
+	// * Whenever something is sent on triggerAppendEntriesChan
+	// * ... Or every 50 ms, if no events occur on triggerAppendEntriesChan
 	go func(heartbeatTimeout time.Duration) {
-		// Immediately send AEs to peers.
-		cm.leaderSendAEs()
+		// Immediately send AppendEntries to peers.
+		cm.leaderSendAppendEntries()
 
 		t := time.NewTimer(heartbeatTimeout)
 		defer t.Stop()
@@ -558,7 +568,7 @@ func (cm *ConsensusModule) startLeader() {
 				// Reset timer to fire again after heartbeatTimeout.
 				t.Stop()
 				t.Reset(heartbeatTimeout)
-			case _, ok := <-cm.triggerAEChan:
+			case _, ok := <-cm.triggerAppendEntriesChan:
 				if ok {
 					doSend = true
 				} else {
@@ -580,15 +590,15 @@ func (cm *ConsensusModule) startLeader() {
 					return
 				}
 				cm.mu.Unlock()
-				cm.leaderSendAEs()
+				cm.leaderSendAppendEntries()
 			}
 		}
 	}(50 * time.Millisecond)
 }
 
-// leaderSendAEs sends a round of AEs to all peers, collects their
+// leaderSendAppendEntries sends a round of AppendEntries to all peers, collects their
 // replies and adjusts cm's state.
-func (cm *ConsensusModule) leaderSendAEs() {
+func (cm *ConsensusModule) leaderSendAppendEntries() {
 	cm.mu.Lock()
 	if cm.state != Leader {
 		cm.mu.Unlock()
@@ -652,9 +662,9 @@ func (cm *ConsensusModule) leaderSendAEs() {
 							cm.dlog("leader sets commitIndex := %d", cm.commitIndex)
 							// Commit index changed: the leader considers new entries to be
 							// committed. Send new entries on the commit channel to this
-							// leader's clients, and notify followers by sending them AEs.
+							// leader's clients, and notify followers by sending them AppendEntries.
 							cm.newCommitReadyChan <- struct{}{}
-							cm.triggerAEChan <- struct{}{}
+							cm.triggerAppendEntriesChan <- struct{}{}
 						}
 					} else {
 						if reply.ConflictTerm >= 0 {
