@@ -1,5 +1,5 @@
 # Use the official Go image as the base image
-FROM golang:1.21-alpine
+FROM golang:alpine3.18
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -11,6 +11,7 @@ ARG CONFIG_FILE_PATH
 ENV CGO_ENABLED=1
 
 # Download and install the Go dependencies
+RUN go mod tidy
 RUN apk add --no-cache gcc musl-dev
 RUN go get github.com/mattn/go-sqlite3
 RUN go mod download
