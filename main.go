@@ -51,7 +51,7 @@ func main() {
 	readyChan := make(chan interface{})
 	storageForServer := raft.NewMapStorage()
 	commitChannel := make(chan raft.CommitEntry)
-	singleServer := raft.NewServer(cfg.MyID, cfg.PeerIDs, storageForServer, readyChan, commitChannel)
+	singleServer := raft.NewServer(cfg.MyID, config.ExtractPeerIDs(cfg), storageForServer, readyChan, commitChannel)
 	singleServer.Serve(cfg.ListenerAddress)
 
 	cfg2, err2 := config.LoadConfigFromXML("config/config2.xml")
@@ -61,7 +61,7 @@ func main() {
 	log.Printf("Loaded config2: %+v\n", cfg2)
 	storageForServer2 := raft.NewMapStorage()
 	commitChannel2 := make(chan raft.CommitEntry)
-	singleServer2 := raft.NewServer(cfg2.MyID, cfg2.PeerIDs, storageForServer2, readyChan, commitChannel2)
+	singleServer2 := raft.NewServer(cfg2.MyID, config.ExtractPeerIDs(cfg2), storageForServer2, readyChan, commitChannel2)
 	singleServer2.Serve(cfg2.ListenerAddress)
 
 	cfg3, err3 := config.LoadConfigFromXML("config/config3.xml")
@@ -71,11 +71,11 @@ func main() {
 	log.Printf("Loaded config3: %+v\n", cfg3)
 	storageForServer3 := raft.NewMapStorage()
 	commitChannel3 := make(chan raft.CommitEntry)
-	singleServer3 := raft.NewServer(cfg3.MyID, cfg3.PeerIDs, storageForServer3, readyChan, commitChannel3)
+	singleServer3 := raft.NewServer(cfg3.MyID, config.ExtractPeerIDs(cfg3), storageForServer3, readyChan, commitChannel3)
 	singleServer3.Serve(cfg3.ListenerAddress)
 
 	// go through peer addresses and connect to them
-	for peer, address := range cfg.PeerAddresses {
+	for peer, address := range config.ExtractPeerIDs(cfg) {
 		log.Printf("Id : %d, Connecting to peer : %s\n", peer, address)
 	}
 	//singleServer.ConnectToPeer(1, cfg.PeerAddresses[1])
