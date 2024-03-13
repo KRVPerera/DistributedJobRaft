@@ -8,6 +8,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 
 ARG CONFIG_FILE_PATH
+ENV CGO_ENABLED=1
 
 # Download and install the Go dependencies
 RUN go get github.com/mattn/go-sqlite3
