@@ -133,3 +133,4 @@ fabric.properties
 .idea/copilot
 
 data.db
+data.db-journal
