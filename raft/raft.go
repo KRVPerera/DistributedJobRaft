@@ -275,7 +275,9 @@ func (cm *ConsensusModule) RequestVote(args RequestVoteArgs, reply *RequestVoteR
 
 	if cm.currentTerm == args.Term &&
 		(cm.votedFor == -1 || cm.votedFor == args.CandidateId) &&
+		// candidate's log is at least as up-to-date as receiver's log
 		(args.LastLogTerm > lastLogTerm ||
+			// If the terms are the same, the candidate's log must be at least as up-to-date as ours.
 			(args.LastLogTerm == lastLogTerm && args.LastLogIndex >= lastLogIndex)) {
 		reply.VoteGranted = true
 		cm.votedFor = args.CandidateId
