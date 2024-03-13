@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/KRVPerera/DistributedJobRaft/config"
 	"github.com/KRVPerera/DistributedJobRaft/raft"
 	"log"
@@ -12,9 +13,6 @@ type CommandRequest struct {
 	ID      int         `json:"id"`
 	Command interface{} `json:"command"`
 }
-
-const clusterSize = 3
-const myId = 0
 
 var ns *raft.Server
 
@@ -38,6 +36,10 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Hello, World!")
 }
 
 func main() {
@@ -144,5 +146,6 @@ func main() {
 	//singleServer2.Shutdown()
 	//singleServer3.Shutdown()
 	http.HandleFunc("/submit", SubmitHandler)
+	http.HandleFunc("/hello", helloHandler)
 	http.ListenAndServe(":8080", nil)
 }
