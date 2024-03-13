@@ -16,7 +16,7 @@ type CommandRequest struct {
 const clusterSize = 3
 const myId = 0
 
-var ns = make([]*raft.Server, clusterSize)
+var ns *raft.Server
 
 func SubmitHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -31,7 +31,7 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isLeader := ns[myId].Submit(cmdReq.Command)
+	isLeader := ns.Submit(cmdReq.Command)
 	if !isLeader {
 		http.Error(w, "Not a leader", http.StatusBadRequest)
 		return
@@ -51,8 +51,8 @@ func main() {
 	readyChan := make(chan interface{})
 	storageForServer := raft.NewMapStorage()
 	commitChannel := make(chan raft.CommitEntry)
-	singleServer := raft.NewServer(cfg.MyID, config.ExtractPeerIDs(cfg), storageForServer, readyChan, commitChannel)
-	singleServer.Serve(cfg.ListenerAddress)
+	ns = raft.NewServer(cfg.MyID, config.ExtractPeerIDs(cfg), storageForServer, readyChan, commitChannel)
+	ns.Serve(cfg.ListenerAddress)
 
 	cfg2, err2 := config.LoadConfigFromXML("config/config2.xml")
 	if err2 != nil {
@@ -78,7 +78,7 @@ func main() {
 	for _, peer := range cfg.Peers {
 		log.Printf("Connecting to peer id : %d, peer address : %s\n", peer.PeerID, peer.PeerAddress)
 		// break address to host and port
-		err := singleServer.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
+		err := ns.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
 		if err != nil {
 			log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
 		}
