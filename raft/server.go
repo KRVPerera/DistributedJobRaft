@@ -138,25 +138,26 @@ func (s *Server) ConnectToPeer(peerId int, addr net.Addr) error {
 // Connect to peers using string address
 // exponential bcakoff is used to connect to peer
 func (s *Server) ConnectToPeerStringAddress(peerId int, addr string) error {
-	var err error
+	s.mu.Lock()
 	netAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return err
 	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	if s.peerClients[peerId] == nil {
 		for i := 0; i < 100; i++ {
 			client, err := rpc.Dial(netAddr.Network(), netAddr.String())
 			if err == nil {
 				s.peerClients[peerId] = client
+				fmt.Printf("Connected to peer id : %d, peer address : %s\n", peerId, addr)
+				s.mu.Unlock()
 				return nil
 			}
 			fmt.Printf("Connection failed attempt %d: %v\n", i+1, err)
-			delay := time.Second << uint(i) // Exponential backoff
+			delay := time.Second * 2 // Exponential backoff
 			time.Sleep(delay)
 		}
 	}
+	s.mu.Unlock()
 	return err
 }
 

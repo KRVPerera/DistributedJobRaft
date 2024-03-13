@@ -114,6 +114,7 @@ type ConsensusModule struct {
 // it's safe to start its state machine. commitChan is going to be used by the
 // CM to send log entries that have been committed by the Raft cluster.
 func NewConsensusModule(id int, peerIds []int, server *Server, storage Storage, ready <-chan interface{}, commitChan chan<- CommitEntry) *ConsensusModule {
+
 	cm := new(ConsensusModule)
 	cm.id = id
 	cm.peerIds = peerIds
@@ -128,6 +129,8 @@ func NewConsensusModule(id int, peerIds []int, server *Server, storage Storage, 
 	cm.lastApplied = -1
 	cm.nextIndex = make(map[int]int)
 	cm.matchIndex = make(map[int]int)
+
+	cm.dlog("Starting Consensus Module")
 
 	if cm.storage.HasData() {
 		cm.restoreFromStorage()
@@ -435,7 +438,7 @@ func (cm *ConsensusModule) runElectionTimer() {
 	defer ticker.Stop()
 	for {
 		<-ticker.C
-
+		cm.dlog("election timer ticks...")
 		cm.mu.Lock()
 		if cm.state != Candidate && cm.state != Follower {
 			cm.dlog("in election timer state=%s, bailing out", cm.state)
@@ -451,6 +454,7 @@ func (cm *ConsensusModule) runElectionTimer() {
 
 		// Start an election if we haven't heard from a leader or haven't voted for
 		// someone for the duration of the timeout.
+
 		if elapsed := time.Since(cm.electionResetEvent); elapsed >= timeoutDuration {
 			cm.startElection()
 			cm.mu.Unlock()
