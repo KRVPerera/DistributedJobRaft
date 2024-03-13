@@ -10,6 +10,7 @@ COPY go.mod go.sum ./
 ARG CONFIG_FILE_PATH
 
 # Download and install the Go dependencies
+RUN go get
 RUN go mod download
 
 # Copy the rest of the project files
