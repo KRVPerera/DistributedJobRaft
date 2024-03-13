@@ -1,5 +1,5 @@
 <ClusterConfig>
-    <MyID>1</MyID>
+    <MyID>2</MyID>
     <ElectionTimeout>5000000000</ElectionTimeout>
     <HeartbeatTimeout>1000000000</HeartbeatTimeout>
     <CommitTimeout>2000000000</CommitTimeout>
