@@ -17,6 +17,7 @@ type ClusterConfig struct {
 	CommitTimeout    time.Duration `xml:"CommitTimeout"`
 	PeerIDs          []int         `xml:"PeerIDs>PeerID"`
 	PeerAddresses    []string      `xml:"PeerAddresses>PeerAddress"`
+	ListenerAddress  string        `xml:"ListenerAddress"`
 }
 
 // LoadConfigFromXML loads the configuration settings from an XML file.

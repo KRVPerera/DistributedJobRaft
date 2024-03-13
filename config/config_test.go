@@ -31,7 +31,7 @@ func TestConfig(t *testing.T) {
 
 func TestLoadConfigFromXML(t *testing.T) {
 	// Call the function with the path to your XML file
-	cfg, err := LoadConfigFromXML("config.xml")
+	cfg, err := LoadConfigFromXML("test_config.xml")
 	if err != nil {
 		t.Fatalf("Failed to load config: %v", err)
 	}
@@ -75,5 +75,9 @@ func TestLoadConfigFromXML(t *testing.T) {
 		if addr != expectedPeerAddresses[i] {
 			t.Errorf("Expected PeerAddress at index %d to be %s, got %s", i, expectedPeerAddresses[i], addr)
 		}
+	}
+
+	if cfg.ListenerAddress != "localhost:2461" {
+		t.Errorf("Expected ListenerAddress to be localhost:2460, got %s", cfg.ListenerAddress)
 	}
 }

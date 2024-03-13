@@ -5,10 +5,12 @@
     <CommitTimeout>2000000000</CommitTimeout>
     <ListenerAddress>localhost:2461</ListenerAddress>
     <PeerIDs>
+        <PeerID>1</PeerID>
         <PeerID>3</PeerID>
         <PeerID>2</PeerID>
     </PeerIDs>
     <PeerAddresses>
+        <PeerAddress>localhost:2461</PeerAddress>
         <PeerAddress>localhost:2462</PeerAddress>
         <PeerAddress>localhost:2463</PeerAddress>
     </PeerAddresses>

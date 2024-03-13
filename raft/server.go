@@ -55,7 +55,7 @@ func NewServer(serverId int, peerIds []int, storage Storage, ready <-chan interf
 	return s
 }
 
-func (s *Server) Serve() {
+func (s *Server) Serve(address string) {
 	s.mu.Lock()
 	s.cm = NewConsensusModule(s.serverId, s.peerIds, s, s.storage, s.ready, s.commitChan)
 
@@ -66,7 +66,7 @@ func (s *Server) Serve() {
 	s.rpcServer.RegisterName("ConsensusModule", s.rpcProxy)
 
 	var err error
-	s.listener, err = net.Listen("tcp", ":0")
+	s.listener, err = net.Listen("tcp", address)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/KRVPerera/DistributedJobRaft/config"
 	"github.com/KRVPerera/DistributedJobRaft/raft"
 	"log"
 	"net/http"
@@ -40,12 +41,25 @@ func SubmitHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	// Create a sample config
+	cfg, err := config.LoadConfigFromXML("config/config.xml")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+	log.Println("Loaded config: %+v", cfg)
+
 	clusterSize := 3
 	connected := make([]bool, clusterSize)
 	alive := make([]bool, clusterSize)
 	commitChans := make([]chan raft.CommitEntry, clusterSize)
 	ready := make(chan interface{})
 	storage := make([]*raft.MapStorage, clusterSize)
+
+	storageForServer := raft.NewMapStorage()
+	commitChannel := make(chan raft.CommitEntry)
+	singleServer := raft.NewServer(cfg.MyID, cfg.PeerIDs, storageForServer, ready, commitChannel)
+	singleServer.Serve()
 
 	// Create all Servers in this cluster, assign ids and peer ids.
 	for i := 0; i < clusterSize; i++ {
@@ -59,7 +73,7 @@ func main() {
 		storage[i] = raft.NewMapStorage()
 		commitChans[i] = make(chan raft.CommitEntry)
 		ns[i] = raft.NewServer(i, peerIds, storage[i], ready, commitChans[i])
-		ns[i].Serve()
+		ns[i].Serve(":0")
 		alive[i] = true
 	}
 
