@@ -146,7 +146,7 @@ func (s *Server) ConnectToPeerStringAddress(peerId int, addr string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.peerClients[peerId] == nil {
-		for i := 0; i < 3; i++ {
+		for i := 0; i < 100; i++ {
 			client, err := rpc.Dial(netAddr.Network(), netAddr.String())
 			if err == nil {
 				s.peerClients[peerId] = client
