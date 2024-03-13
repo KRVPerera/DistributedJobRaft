@@ -135,7 +135,10 @@ func (s *Server) ConnectToPeer(peerId int, addr net.Addr) error {
 	return nil
 }
 
+// Connect to peers using string address
+// exponential bcakoff is used to connect to peer
 func (s *Server) ConnectToPeerStringAddress(peerId int, addr string) error {
+	var err error
 	netAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return err
@@ -143,13 +146,18 @@ func (s *Server) ConnectToPeerStringAddress(peerId int, addr string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.peerClients[peerId] == nil {
-		client, err := rpc.Dial(netAddr.Network(), netAddr.String())
-		if err != nil {
-			return err
+		for i := 0; i < 3; i++ {
+			client, err := rpc.Dial(netAddr.Network(), netAddr.String())
+			if err == nil {
+				s.peerClients[peerId] = client
+				return nil
+			}
+			fmt.Printf("Connection failed attempt %d: %v\n", i+1, err)
+			delay := time.Second << uint(i) // Exponential backoff
+			time.Sleep(delay)
 		}
-		s.peerClients[peerId] = client
 	}
-	return nil
+	return err
 }
 
 // DisconnectPeer disconnects this server from the peer identified by peerId.
