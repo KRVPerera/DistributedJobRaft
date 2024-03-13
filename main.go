@@ -75,9 +75,33 @@ func main() {
 	singleServer3.Serve(cfg3.ListenerAddress)
 
 	// go through peer addresses and connect to them
-	for peer, address := range config.ExtractPeerIDs(cfg) {
-		log.Printf("Id : %d, Connecting to peer : %s\n", peer, address)
+	for _, peer := range cfg.Peers {
+		log.Printf("Connecting to peer id : %d, peer address : %s\n", peer.PeerID, peer.PeerAddress)
+		// break address to host and port
+		err := singleServer.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
+		if err != nil {
+			log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+		}
 	}
+
+	for _, peer := range cfg2.Peers {
+		log.Printf("Connecting to peer id : %d, peer address : %s\n", peer.PeerID, peer.PeerAddress)
+		// break address to host and port
+		err := singleServer2.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
+		if err != nil {
+			log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+		}
+	}
+
+	for _, peer := range cfg3.Peers {
+		log.Printf("Connecting to peer id : %d, peer address : %s\n", peer.PeerID, peer.PeerAddress)
+		// break address to host and port
+		err := singleServer3.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
+		if err != nil {
+			log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+		}
+	}
+	close(readyChan)
 	//singleServer.ConnectToPeer(1, cfg.PeerAddresses[1])
 
 	//
@@ -116,9 +140,9 @@ func main() {
 	//}
 	//close(ready)
 
-	singleServer.Shutdown()
-	singleServer2.Shutdown()
-	singleServer3.Shutdown()
+	//singleServer.Shutdown()
+	//singleServer2.Shutdown()
+	//singleServer3.Shutdown()
 	http.HandleFunc("/submit", SubmitHandler)
 	http.ListenAndServe(":8080", nil)
 }

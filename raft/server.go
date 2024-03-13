@@ -135,6 +135,23 @@ func (s *Server) ConnectToPeer(peerId int, addr net.Addr) error {
 	return nil
 }
 
+func (s *Server) ConnectToPeerStringAddress(peerId int, addr string) error {
+	netAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return err
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.peerClients[peerId] == nil {
+		client, err := rpc.Dial(netAddr.Network(), netAddr.String())
+		if err != nil {
+			return err
+		}
+		s.peerClients[peerId] = client
+	}
+	return nil
+}
+
 // DisconnectPeer disconnects this server from the peer identified by peerId.
 func (s *Server) DisconnectPeer(peerId int) error {
 	s.mu.Lock()
