@@ -4,12 +4,14 @@
     <HeartbeatTimeout>1000000000</HeartbeatTimeout>
     <CommitTimeout>2000000000</CommitTimeout>
     <ListenerAddress>localhost:2461</ListenerAddress>
-    <PeerIDs>
-        <PeerID>3</PeerID>
-        <PeerID>2</PeerID>
-    </PeerIDs>
-    <PeerAddresses>
-        <PeerAddress>localhost:2462</PeerAddress>
-        <PeerAddress>localhost:2463</PeerAddress>
-    </PeerAddresses>
+    <Peers>
+        <Peer>
+            <PeerID>2</PeerID>
+            <PeerAddress>localhost:2462</PeerAddress>
+        </Peer>
+        <Peer>
+            <PeerID>3</PeerID>
+            <PeerAddress>localhost:2463</PeerAddress>
+        </Peer>
+    </Peers>
 </ClusterConfig>

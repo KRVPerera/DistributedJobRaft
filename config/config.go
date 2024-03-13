@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"sort"
 	"time"
 )
 
@@ -15,9 +14,14 @@ type ClusterConfig struct {
 	ElectionTimeout  time.Duration `xml:"ElectionTimeout"`
 	HeartbeatTimeout time.Duration `xml:"HeartbeatTimeout"`
 	CommitTimeout    time.Duration `xml:"CommitTimeout"`
-	PeerIDs          []int         `xml:"PeerIDs>PeerID"`
-	PeerAddresses    []string      `xml:"PeerAddresses>PeerAddress"`
+	Peers            []Peer        `xml:"Peers>Peer"`
 	ListenerAddress  string        `xml:"ListenerAddress"`
+}
+
+type Peer struct {
+	XMLName     xml.Name `xml:"Peer"`
+	PeerID      int      `xml:"PeerID"`
+	PeerAddress string   `xml:"PeerAddress"`
 }
 
 // LoadConfigFromXML loads the configuration settings from an XML file.
@@ -50,12 +54,6 @@ func LoadConfigFromXML(filePath string) (*ClusterConfig, error) {
 		log.Printf("Failed to unmarshal XML: %v", err)
 		return nil, err
 	}
-
-	// sort the peer IDs
-	sort.Ints(cfg.PeerIDs)
-
-	// sort addresses
-	sort.Strings(cfg.PeerAddresses)
 
 	// Log the loaded config
 	log.Printf("Loaded config: %+v", cfg)

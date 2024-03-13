@@ -10,7 +10,6 @@ func TestConfig(t *testing.T) {
 		MyID:             1,
 		ElectionTimeout:  1000,
 		HeartbeatTimeout: 500,
-		PeerIDs:          []int{2, 3, 4},
 	}
 
 	// Test the ID field
@@ -55,29 +54,24 @@ func TestLoadConfigFromXML(t *testing.T) {
 		t.Errorf("Expected CommitTimeout to be 2000000000, got %d", cfg.CommitTimeout)
 	}
 
-	if len(cfg.PeerIDs) != 3 {
-		t.Errorf("Expected PeerIDs length to be 3, got %d", len(cfg.PeerIDs))
-	}
-
-	expectedPeerIDs := []int{1, 2, 3}
-	for i, id := range cfg.PeerIDs {
-		if id != expectedPeerIDs[i] {
-			t.Errorf("Expected PeerID at index %d to be %d, got %d", i, expectedPeerIDs[i], id)
-		}
-	}
-
-	if len(cfg.PeerAddresses) != 3 {
-		t.Errorf("Expected PeerAddresses length to be 3, got %d", len(cfg.PeerAddresses))
-	}
-
-	expectedPeerAddresses := []string{"localhost:2461", "localhost:2462", "localhost:2463"}
-	for i, addr := range cfg.PeerAddresses {
-		if addr != expectedPeerAddresses[i] {
-			t.Errorf("Expected PeerAddress at index %d to be %s, got %s", i, expectedPeerAddresses[i], addr)
-		}
+	if len(cfg.Peers) != 3 {
+		t.Errorf("Expected PeerAddresses length to be 3, got %d", len(cfg.Peers))
 	}
 
 	if cfg.ListenerAddress != "localhost:2461" {
 		t.Errorf("Expected ListenerAddress to be localhost:2460, got %s", cfg.ListenerAddress)
+	}
+
+	// Test the PeerAddresses field
+	if cfg.Peers[0].PeerAddress != "localhost:2461" {
+		t.Errorf("Expected PeerAddress to be localhost:2461, got %s", cfg.Peers[0].PeerAddress)
+	}
+
+	if cfg.Peers[1].PeerAddress != "localhost:2462" {
+		t.Errorf("Expected PeerAddress to be localhost:2462, got %s", cfg.Peers[1].PeerAddress)
+	}
+
+	if cfg.Peers[2].PeerAddress != "localhost:2463" {
+		t.Errorf("Expected PeerAddress to be localhost:2463, got %s", cfg.Peers[2].PeerAddress)
 	}
 }

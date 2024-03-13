@@ -3,15 +3,11 @@
     <ElectionTimeout>5000000000</ElectionTimeout>
     <HeartbeatTimeout>1000000000</HeartbeatTimeout>
     <CommitTimeout>2000000000</CommitTimeout>
-    <ListenerAddress>localhost:2461</ListenerAddress>
+    <ListenerAddress>localhost:2462</ListenerAddress>
     <Peers>
         <Peer>
             <PeerID>1</PeerID>
             <PeerAddress>localhost:2461</PeerAddress>
-        </Peer>
-        <Peer>
-            <PeerID>2</PeerID>
-            <PeerAddress>localhost:2462</PeerAddress>
         </Peer>
         <Peer>
             <PeerID>3</PeerID>
