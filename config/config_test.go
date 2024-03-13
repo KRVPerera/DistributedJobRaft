@@ -75,3 +75,29 @@ func TestLoadConfigFromXML(t *testing.T) {
 		t.Errorf("Expected PeerAddress to be localhost:2463, got %s", cfg.Peers[2].PeerAddress)
 	}
 }
+
+func TestExtractPeerIDs(t *testing.T) {
+	cfg, err := LoadConfigFromXML("test_config.xml")
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	t.Logf("Loaded config: %+v", cfg)
+	ids := ExtractPeerIDs(cfg)
+
+	// Test the ExtractPeerIDs function
+	if len(ids) != 3 {
+		t.Errorf("Expected ExtractPeerIDs length to be 3, got %d", len(ids))
+	}
+
+	if ids[0] != 1 {
+		t.Errorf("Expected ExtractPeerIDs[0] to be 1, got %d", ids[0])
+	}
+
+	if ids[1] != 2 {
+		t.Errorf("Expected ExtractPeerIDs[1] to be 2, got %d", ids[1])
+	}
+
+	if ids[2] != 3 {
+		t.Errorf("Expected ExtractPeerIDs[2] to be 3, got %d", ids[2])
+	}
+}

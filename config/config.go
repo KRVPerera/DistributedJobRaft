@@ -59,3 +59,11 @@ func LoadConfigFromXML(filePath string) (*ClusterConfig, error) {
 	log.Printf("Loaded config: %+v", cfg)
 	return &cfg, nil
 }
+
+func ExtractPeerIDs(cfg *ClusterConfig) []int {
+	var peerIDs []int
+	for _, peer := range cfg.Peers {
+		peerIDs = append(peerIDs, peer.PeerID)
+	}
+	return peerIDs
+}
