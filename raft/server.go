@@ -161,6 +161,10 @@ func (s *Server) Call(id int, serviceMethod string, args interface{}, reply inte
 	}
 }
 
+func (s *Server) Submit(command interface{}) bool {
+	return s.cm.Submit(command)
+}
+
 // RPCProxy is a trivial pass-thru proxy type for ConsensusModule's RPC methods.
 // It's useful for:
 //   - Simulating a small delay in RPC transmission.

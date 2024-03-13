@@ -1,0 +1,16 @@
+<ClusterConfig>
+    <MyID>1</MyID>
+    <ElectionTimeout>5000000000</ElectionTimeout>
+    <HeartbeatTimeout>1000000000</HeartbeatTimeout>
+    <CommitTimeout>2000000000</CommitTimeout>
+    <PeerIDs>
+        <PeerID>1</PeerID>
+        <PeerID>3</PeerID>
+        <PeerID>2</PeerID>
+    </PeerIDs>
+    <PeerAddresses>
+        <PeerAddress>localhost:2461</PeerAddress>
+        <PeerAddress>localhost:2462</PeerAddress>
+        <PeerAddress>localhost:2463</PeerAddress>
+    </PeerAddresses>
+</ClusterConfig>

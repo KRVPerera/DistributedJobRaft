@@ -5,6 +5,19 @@
 ## About the project
 ## Implemented components:
 
+Cluster is RPC connected and setup statically. Each node is aware of the other nodes in the cluster. 
+
+- [x] Leader Election
+- [x] Log Replication
+
+Our system can have any number of nodes and the leader election is done using Raft consensus algorithm. The leader is responsible for the log replication.
+Each node goes through the following states:
+- Follower
+- Candidate
+- Leader
+
+*This image is from the raft paper*
+![Node state changes](docs%2Fimages%2Fraft_node_state_changes.png)
 
 Detailed description of the system architecture (Application-specific system components):
 - System must have at least three nodes (e.g, containers)
@@ -14,11 +27,18 @@ Participating nodes must:
 - Exchange information (messages): RPC,
 - Log their behavior understandably: messages, events, actions, etc.
 
+### Naming
+- each node is given uniques `integer` number upon creation of the cluster
+- Each node is also introduced to its peers in the cluster upon setup
 
-Nodes (or their roles) do not have to be identical
-For example, one acts as server, broker, monitor / admin, etc.
-Each node must be an independent entity and (partially) autonomous
+### Communication
+- Each node is aware of the other nodes in the cluster and can communicate with them using RPC
+- Upon cluster creation stage each node opens and keep a RPC channel between itself and the other nodes in the cluster
 
+RPC calls are exactly the ones described in the Raft paper:
+- RequestVote
+- AppendEntries
+- RequestVoteResponse
 
 Detailed descriptions of relevant principles covered in the course (architecture, processes, communication, naming, synchronization, consistency and replication, fault tolerance); irrelevant principles can be left out.
 
