@@ -10,7 +10,7 @@ COPY go.mod go.sum ./
 ARG CONFIG_FILE_PATH
 
 # Download and install the Go dependencies
-RUN go get
+RUN go get -u github.com/mattn/go-sqlite3 v1.14.6
 RUN go mod download
 
 # Copy the rest of the project files
