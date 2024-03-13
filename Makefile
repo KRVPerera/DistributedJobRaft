@@ -14,4 +14,4 @@ docker_build_2:
 docker_build_3:
     docker build . --build-arg CONFIG_FILE_PATH=config3.xml -t djraft-node3:latest
 
-.PHONY: docker
+.PHONY: docker_run docker_build_1 docker_build_2 docker_build_3
