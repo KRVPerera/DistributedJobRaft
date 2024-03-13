@@ -5,6 +5,7 @@ package raft
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3" // Import go-sqlite3 library
 	"os"
 	"sync"
 )
@@ -20,11 +21,13 @@ func NewSQLiteStorage() *SQLiteStorage {
 
 	db, err := sql.Open("sqlite3", "./data.db")
 	if err != nil {
+		fmt.Printf("Error openning database: %v\n", err)
 		return nil
 	}
 	// Ensure that the 'data' table exists
 	_, err = db.Exec("CREATE TABLE IF NOT EXISTS data (key TEXT PRIMARY KEY, value BLOB)")
 	if err != nil {
+		fmt.Printf("table creation error: %v\n", err)
 		return nil
 	}
 	_ = db.Close()
