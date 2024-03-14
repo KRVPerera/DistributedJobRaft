@@ -144,18 +144,13 @@ func (s *Server) ConnectToPeerStringAddress(peerId int, addr string) error {
 		return err
 	}
 	if s.peerClients[peerId] == nil {
-		for i := 0; i < 100; i++ {
-			client, err := rpc.Dial(netAddr.Network(), netAddr.String())
-			if err == nil {
-				s.peerClients[peerId] = client
-				fmt.Printf("Connected to peer id : %d, peer address : %s\n", peerId, addr)
-				s.mu.Unlock()
-				return nil
-			}
-			fmt.Printf("Connection failed attempt %d: %v\n", i+1, err)
-			delay := time.Second * 2 // Exponential backoff
-			time.Sleep(delay)
+		client, err := rpc.Dial(netAddr.Network(), netAddr.String())
+		if err != nil {
+			s.mu.Unlock()
+			return err
 		}
+		s.peerClients[peerId] = client
+		fmt.Printf("Connected to peer id : %d, peer address : %s\n", peerId, addr)
 	}
 	s.mu.Unlock()
 	return err

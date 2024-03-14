@@ -7,6 +7,7 @@ import (
 	"github.com/KRVPerera/DistributedJobRaft/raft"
 	"log"
 	"net/http"
+	"time"
 )
 
 type CommandRequest struct {
@@ -77,12 +78,22 @@ func main() {
 	//singleServer3.Serve(cfg3.ListenerAddress)
 
 	// go through peer addresses and connect to them
-	for _, peer := range cfg.Peers {
-		log.Printf("Connecting to peer id : %d, peer address : %s\n", peer.PeerID, peer.PeerAddress)
-		// break address to host and port
-		err := ns.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
-		if err != nil {
-			log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+	var count = 0
+	for {
+		for _, peer := range cfg.Peers {
+			log.Printf("Connecting to peer id : %d, peer address : %s\n", peer.PeerID, peer.PeerAddress)
+			// break address to host and port
+			err := ns.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
+			if err != nil {
+				log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+			} else {
+				count++
+			}
+			time.Sleep(1 * time.Second)
+		}
+
+		if count >= len(cfg.Peers) {
+			break
 		}
 	}
 

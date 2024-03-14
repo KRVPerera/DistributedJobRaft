@@ -144,6 +144,7 @@ func NewConsensusModule(id int, peerIds []int, server *Server, storage Storage, 
 		cm.mu.Lock()
 		cm.electionResetEvent = time.Now()
 		cm.mu.Unlock()
+		cm.dlog("Starting runElectionTimer")
 		cm.runElectionTimer()
 	}()
 
@@ -469,6 +470,7 @@ func (cm *ConsensusModule) runElectionTimer() {
 		// someone for the duration of the timeout.
 
 		if elapsed := time.Since(cm.electionResetEvent); elapsed >= timeoutDuration {
+			cm.dlog("election timer expired; start new election")
 			cm.startElection()
 			cm.mu.Unlock()
 			return
