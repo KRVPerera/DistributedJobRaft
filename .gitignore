@@ -134,3 +134,5 @@ fabric.properties
 
 data.db
 data.db-journal
+*.db
+*.db-journal

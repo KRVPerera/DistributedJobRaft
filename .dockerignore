@@ -3,3 +3,5 @@
 docs
 data.db
 data.db-journal
+*.db
+*.db-journal
