@@ -16,7 +16,8 @@ import (
 	"time"
 )
 
-const DebugCM = 0
+const DebugCM = 1
+const InfoCM = 1
 
 // CommitEntry is the data reported by Raft to the commit channel. Each commit
 // entry notifies the client that consensus was reached on a command and it can
@@ -243,6 +244,13 @@ func (cm *ConsensusModule) persistToStorage() {
 // dlog logs a debugging message is DebugCM > 0.
 func (cm *ConsensusModule) dlog(format string, args ...interface{}) {
 	if DebugCM > 0 {
+		format = fmt.Sprintf("[%d] ", cm.id) + format
+		log.Printf(format, args...)
+	}
+}
+
+func (cm *ConsensusModule) dinfo(format string, args ...interface{}) {
+	if InfoCM > 0 {
 		format = fmt.Sprintf("[%d] ", cm.id) + format
 		log.Printf(format, args...)
 	}
