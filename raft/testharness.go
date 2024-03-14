@@ -6,6 +6,7 @@ package raft
 
 import (
 	"log"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +14,10 @@ import (
 
 func init() {
 	log.SetFlags(log.Ltime | log.Lmicroseconds)
+}
+
+type BaseHarness interface {
+	Shutdown()
 }
 
 type Harness struct {
@@ -43,6 +48,90 @@ type Harness struct {
 
 	n int
 	t *testing.T
+}
+
+type SqliteHarness struct {
+	mu sync.Mutex
+
+	// cluster is a list of all the raft servers participating in a cluster.
+	cluster []*Server
+	storage []*SQLiteStorage
+
+	// commitChans has a channel per server in cluster with the commi channel for
+	// that server.
+	commitChans []chan CommitEntry
+
+	// commits at index i holds the sequence of commits made by server i so far.
+	// It is populated by goroutines that listen on the corresponding commitChans
+	// channel.
+	commits [][]CommitEntry
+
+	// connected has a bool per server in cluster, specifying whether this server
+	// is currently connected to peers (if false, it's partitioned and no messages
+	// will pass to or from it).
+	connected []bool
+
+	// alive has a bool per server in cluster, specifying whether this server is
+	// currently alive (false means it has crashed and wasn't restarted yet).
+	// connected implies alive.
+	alive []bool
+
+	n int
+	t *testing.T
+}
+
+// NewHarness creates a new test Harness, initialized with n servers connected
+// to each other.
+func NewSQliteDBHarness(t *testing.T, n int) *SqliteHarness {
+	ns := make([]*Server, n)
+	connected := make([]bool, n)
+	alive := make([]bool, n)
+	commitChans := make([]chan CommitEntry, n)
+	commits := make([][]CommitEntry, n)
+	ready := make(chan interface{})
+	storage := make([]*SQLiteStorage, n)
+
+	// Create all Servers in this cluster, assign ids and peer ids.
+	for i := 0; i < n; i++ {
+		peerIds := make([]int, 0)
+		for p := 0; p < n; p++ {
+			if p != i {
+				peerIds = append(peerIds, p)
+			}
+		}
+		dpPath := "./raft_db_" + strconv.Itoa(i) + ".db"
+		storage[i] = NewSQLiteStorage(dpPath)
+		commitChans[i] = make(chan CommitEntry)
+		ns[i] = NewServer(i, peerIds, storage[i], ready, commitChans[i])
+		ns[i].Serve(":0")
+		alive[i] = true
+	}
+
+	// Connect all peers to each other.
+	for i := 0; i < n; i++ {
+		for j := 0; j < n; j++ {
+			if i != j {
+				ns[i].ConnectToPeer(j, ns[j].GetListenAddr())
+			}
+		}
+		connected[i] = true
+	}
+	close(ready)
+
+	h := &SqliteHarness{
+		cluster:     ns,
+		storage:     storage,
+		commitChans: commitChans,
+		commits:     commits,
+		connected:   connected,
+		alive:       alive,
+		n:           n,
+		t:           t,
+	}
+	for i := 0; i < n; i++ {
+		go h.collectCommits(i)
+	}
+	return h
 }
 
 // NewHarness creates a new test Harness, initialized with n servers connected
@@ -117,8 +206,38 @@ func (h *Harness) Shutdown() {
 	}
 }
 
+// Shutdown shuts down all the servers in the harness and waits for them to
+// stop running.
+func (h *SqliteHarness) Shutdown() {
+	for i := 0; i < h.n; i++ {
+		h.cluster[i].DisconnectAll()
+		h.connected[i] = false
+	}
+	for i := 0; i < h.n; i++ {
+		if h.alive[i] {
+			h.alive[i] = false
+			h.cluster[i].Shutdown()
+		}
+	}
+	for i := 0; i < h.n; i++ {
+		close(h.commitChans[i])
+	}
+}
+
 // DisconnectPeer disconnects a server from all other servers in the cluster.
 func (h *Harness) DisconnectPeer(id int) {
+	tlog("Disconnect %d", id)
+	h.cluster[id].DisconnectAll()
+	for j := 0; j < h.n; j++ {
+		if j != id {
+			h.cluster[j].DisconnectPeer(id)
+		}
+	}
+	h.connected[id] = false
+}
+
+// DisconnectPeer disconnects a server from all other servers in the cluster.
+func (h *SqliteHarness) DisconnectPeer(id int) {
 	tlog("Disconnect %d", id)
 	h.cluster[id].DisconnectAll()
 	for j := 0; j < h.n; j++ {
@@ -145,10 +264,43 @@ func (h *Harness) ReconnectPeer(id int) {
 	h.connected[id] = true
 }
 
+// ReconnectPeer connects a server to all other servers in the cluster.
+func (h *SqliteHarness) ReconnectPeer(id int) {
+	tlog("Reconnect %d", id)
+	for j := 0; j < h.n; j++ {
+		if j != id && h.alive[j] {
+			if err := h.cluster[id].ConnectToPeer(j, h.cluster[j].GetListenAddr()); err != nil {
+				h.t.Fatal(err)
+			}
+			if err := h.cluster[j].ConnectToPeer(id, h.cluster[id].GetListenAddr()); err != nil {
+				h.t.Fatal(err)
+			}
+		}
+	}
+	h.connected[id] = true
+}
+
 // CrashPeer "crashes" a server by disconnecting it from all peers and then
 // asking it to shut down. We're not going to use the same server instance
 // again, but its storage is retained.
 func (h *Harness) CrashPeer(id int) {
+	tlog("Crash %d", id)
+	h.DisconnectPeer(id)
+	h.alive[id] = false
+	h.cluster[id].Shutdown()
+
+	// Clear out the commits slice for the crashed server; Raft assumes the client
+	// has no persistent state. Once this server comes back online it will replay
+	// the whole log to us.
+	h.mu.Lock()
+	h.commits[id] = h.commits[id][:0]
+	h.mu.Unlock()
+}
+
+// CrashPeer "crashes" a server by disconnecting it from all peers and then
+// asking it to shut down. We're not going to use the same server instance
+// again, but its storage is retained.
+func (h *SqliteHarness) CrashPeer(id int) {
 	tlog("Crash %d", id)
 	h.DisconnectPeer(id)
 	h.alive[id] = false
@@ -216,8 +368,50 @@ func (h *Harness) CheckSingleLeader() (int, int) {
 	return -1, -1
 }
 
+// CheckSingleLeader checks that only a single server thinks it's the leader.
+// Returns the leader's id and term. It retries several times if no leader is
+// identified yet.
+func (h *SqliteHarness) CheckSingleLeader() (int, int) {
+	for r := 0; r < 8; r++ {
+		leaderId := -1
+		leaderTerm := -1
+		for i := 0; i < h.n; i++ {
+			if h.connected[i] {
+				_, term, isLeader := h.cluster[i].cm.Report()
+				if isLeader {
+					if leaderId < 0 {
+						leaderId = i
+						leaderTerm = term
+					} else {
+						h.t.Fatalf("both %d and %d think they're leaders", leaderId, i)
+					}
+				}
+			}
+		}
+		if leaderId >= 0 {
+			return leaderId, leaderTerm
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+
+	h.t.Fatalf("leader not found")
+	return -1, -1
+}
+
 // CheckNoLeader checks that no connected server considers itself the leader.
 func (h *Harness) CheckNoLeader() {
+	for i := 0; i < h.n; i++ {
+		if h.connected[i] {
+			_, _, isLeader := h.cluster[i].cm.Report()
+			if isLeader {
+				h.t.Fatalf("server %d leader; want none", i)
+			}
+		}
+	}
+}
+
+// CheckNoLeader checks that no connected server considers itself the leader.
+func (h *SqliteHarness) CheckNoLeader() {
 	for i := 0; i < h.n; i++ {
 		if h.connected[i] {
 			_, _, isLeader := h.cluster[i].cm.Report()
@@ -342,6 +536,15 @@ func sleepMs(n int) {
 // to the corresponding commits[i]. It's blocking and should be run in a
 // separate goroutine. It returns when commitChans[i] is closed.
 func (h *Harness) collectCommits(i int) {
+	for c := range h.commitChans[i] {
+		h.mu.Lock()
+		tlog("collectCommits(%d) got %+v", i, c)
+		h.commits[i] = append(h.commits[i], c)
+		h.mu.Unlock()
+	}
+}
+
+func (h *SqliteHarness) collectCommits(i int) {
 	for c := range h.commitChans[i] {
 		h.mu.Lock()
 		tlog("collectCommits(%d) got %+v", i, c)

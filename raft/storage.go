@@ -1,5 +1,6 @@
 // Eli Bendersky [https://eli.thegreenplace.net]
 // This code is in the public domain.
+// Maintained by : Rukshan Perera (rukshan.perera@student.oulu.fi)
 package raft
 
 import (
@@ -10,16 +11,33 @@ import (
 	"sync"
 )
 
+// Storage is an interface implemented by stable storage providers.
+type Storage interface {
+	Set(key string, value []byte)
+
+	Get(key string) ([]byte, bool)
+
+	// HasData returns true iff any Sets were made on this Storage.
+	HasData() bool
+}
+
 // SQLiteStorage is an implementation of Storage using SQLite.
 type SQLiteStorage struct {
+	mu     sync.Mutex
 	dbPath string
 }
 
-func NewSQLiteStorage() *SQLiteStorage {
-	_ = os.MkdirAll("./", 0755)
-	_, _ = os.Create("./data.db")
+// MapStorage is a simple in-memory implementation of Storage for testing.
+type MapStorage struct {
+	mu sync.Mutex
+	m  map[string][]byte
+}
 
-	db, err := sql.Open("sqlite3", "./data.db")
+func NewSQLiteStorage(dbPath string) *SQLiteStorage {
+	_ = os.MkdirAll("./", 0755)
+	_, _ = os.Create(dbPath)
+
+	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		fmt.Printf("Error openning database: %v\n", err)
 		return nil
@@ -31,11 +49,13 @@ func NewSQLiteStorage() *SQLiteStorage {
 		return nil
 	}
 	_ = db.Close()
-	return &SQLiteStorage{dbPath: "./data.db"}
+	return &SQLiteStorage{dbPath: dbPath}
 }
 
 // Set stores the given key-value pair in the SQLite database.
 func (ss *SQLiteStorage) Set(key string, value []byte) {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
 	db, err := sql.Open("sqlite3", ss.dbPath)
 	if err != nil {
 		fmt.Printf("Error openning database: %v\n", err)
@@ -65,6 +85,8 @@ func (ss *SQLiteStorage) Set(key string, value []byte) {
 
 // Get retrieves the value associated with the given key from the SQLite database.
 func (ss *SQLiteStorage) Get(key string) ([]byte, bool) {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
 	db, err := sql.Open("sqlite3", ss.dbPath)
 	if err != nil {
 		fmt.Printf("Error openning database: %v\n", err)
@@ -91,6 +113,8 @@ func (ss *SQLiteStorage) Get(key string) ([]byte, bool) {
 
 // HasData checks if there is any data stored in the SQLite database.
 func (ss *SQLiteStorage) HasData() bool {
+	ss.mu.Lock()
+	defer ss.mu.Unlock()
 	db, err := sql.Open("sqlite3", ss.dbPath)
 	if err != nil {
 		fmt.Printf("Error openning database: %v\n", err)
@@ -110,22 +134,6 @@ func (ss *SQLiteStorage) HasData() bool {
 // Close closes the SQLite database connection.
 func (ss *SQLiteStorage) Close() error {
 	return nil
-}
-
-// Storage is an interface implemented by stable storage providers.
-type Storage interface {
-	Set(key string, value []byte)
-
-	Get(key string) ([]byte, bool)
-
-	// HasData returns true iff any Sets were made on this Storage.
-	HasData() bool
-}
-
-// MapStorage is a simple in-memory implementation of Storage for testing.
-type MapStorage struct {
-	mu sync.Mutex
-	m  map[string][]byte
 }
 
 func NewMapStorage() *MapStorage {
