@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-const DebugCM = 1
+const DebugCM = 0
 
 // CommitEntry is the data reported by Raft to the commit channel. Each commit
 // entry notifies the client that consensus was reached on a command and it can
@@ -327,12 +327,13 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 		cm.dlog("... term out of date in AppendEntries")
 		cm.becomeFollower(args.Term)
 	}
-
+	cm.dlog("330")
 	reply.Success = false
 	if args.Term == cm.currentTerm {
 		if cm.state != Follower {
 			cm.becomeFollower(args.Term)
 		}
+		cm.dlog("336")
 		cm.electionResetEvent = time.Now()
 
 		// Does our log contain an entry at PrevLogIndex whose term matches
@@ -341,7 +342,7 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 		if args.PrevLogIndex == -1 ||
 			(args.PrevLogIndex < len(cm.log) && args.PrevLogTerm == cm.log[args.PrevLogIndex].Term) {
 			reply.Success = true
-
+			cm.dlog("345")
 			// Find an insertion point - where there's a term mismatch between
 			// the existing log starting at PrevLogIndex+1 and the new entries sent
 			// in the RPC.
@@ -349,6 +350,7 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 			newEntriesIndex := 0
 
 			for {
+				cm.dlog("353")
 				if logInsertIndex >= len(cm.log) || newEntriesIndex >= len(args.Entries) {
 					break
 				}
@@ -363,12 +365,13 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 			//   term mismatches with an entry from the leader
 			// - newEntriesIndex points at the end of Entries, or an index where the
 			//   term mismatches with the corresponding log entry
+			cm.dlog("368")
 			if newEntriesIndex < len(args.Entries) {
 				cm.dlog("... inserting entries %v from index %d", args.Entries[newEntriesIndex:], logInsertIndex)
 				cm.log = append(cm.log[:logInsertIndex], args.Entries[newEntriesIndex:]...)
 				cm.dlog("... log is now: %v", cm.log)
 			}
-
+			cm.dlog("374")
 			// Set commit index.
 			if args.LeaderCommit > cm.commitIndex {
 				cm.commitIndex = min(args.LeaderCommit, len(cm.log)-1)
@@ -376,28 +379,31 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 				cm.newCommitReadyChan <- struct{}{}
 			}
 		} else {
+			cm.dlog("382")
 			// No match for PrevLogIndex/PrevLogTerm. Populate
 			// ConflictIndex/ConflictTerm to help the leader bring us up to date
 			// quickly.
 			if args.PrevLogIndex >= len(cm.log) {
 				reply.ConflictIndex = len(cm.log)
 				reply.ConflictTerm = -1
+				cm.dlog("389")
 			} else {
 				// PrevLogIndex points within our log, but PrevLogTerm doesn't match
 				// cm.log[PrevLogIndex].
 				reply.ConflictTerm = cm.log[args.PrevLogIndex].Term
-
+				cm.dlog("394")
 				var i int
 				for i = args.PrevLogIndex - 1; i >= 0; i-- {
 					if cm.log[i].Term != reply.ConflictTerm {
 						break
 					}
 				}
+				cm.dlog("401")
 				reply.ConflictIndex = i + 1
 			}
 		}
 	}
-
+	cm.dlog("406")
 	reply.Term = cm.currentTerm
 	cm.persistToStorage()
 	cm.dlog("AppendEntries reply: %+v", *reply)
@@ -438,7 +444,6 @@ func (cm *ConsensusModule) runElectionTimer() {
 	defer ticker.Stop()
 	for {
 		<-ticker.C
-		cm.dlog("election timer ticks...")
 		cm.mu.Lock()
 		if cm.state != Candidate && cm.state != Follower {
 			cm.dlog("in election timer state=%s, bailing out", cm.state)
