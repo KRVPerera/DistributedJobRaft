@@ -1,3 +1,7 @@
+/**
+ * Created by Rukshan Perera (rukshan.perera@student.oulu.fi)
+ */
+
 package main
 
 import (
@@ -52,27 +56,27 @@ func main() {
 	log.Printf("Loaded config: %+v\n", cfg)
 
 	readyChan := make(chan interface{})
-	storageForServer := raft.NewSQLiteStorage()
+	storageForServer := raft.NewSQLiteStorage("./raft.db")
 	commitChannel := make(chan raft.CommitEntry)
 	ns = raft.NewServer(cfg.MyID, config.ExtractPeerIDs(cfg), storageForServer, readyChan, commitChannel)
 	ns.Serve(cfg.ListenerAddress)
 
 	//cfg2, err2 := config.LoadConfigFromXML("config/config2.xml")
 	//if err2 != nil {
-	//	log.Fatalf("Failed to load config: %v", err2)
+	//	log.Printf("Failed to load config: %v", err2)
 	//}
 	//log.Printf("Loaded config2: %+v\n", cfg2)
-	//storageForServer2 := raft.NewSQLiteStorage()
+	//storageForServer2 := raft.NewSQLiteStorage("./raft1.db")
 	//commitChannel2 := make(chan raft.CommitEntry)
 	//singleServer2 := raft.NewServer(cfg2.MyID, config.ExtractPeerIDs(cfg2), storageForServer2, readyChan, commitChannel2)
 	//singleServer2.Serve(cfg2.ListenerAddress)
 	//
 	//cfg3, err3 := config.LoadConfigFromXML("config/config3.xml")
 	//if err3 != nil {
-	//	log.Fatalf("Failed to load config3: %v", err3)
+	//	log.Printf("Failed to load config3: %v", err3)
 	//}
 	//log.Printf("Loaded config3: %+v\n", cfg3)
-	//storageForServer3 := raft.NewSQLiteStorage()
+	//storageForServer3 := raft.NewSQLiteStorage("./raft3.db")
 	//commitChannel3 := make(chan raft.CommitEntry)
 	//singleServer3 := raft.NewServer(cfg3.MyID, config.ExtractPeerIDs(cfg3), storageForServer3, readyChan, commitChannel3)
 	//singleServer3.Serve(cfg3.ListenerAddress)
