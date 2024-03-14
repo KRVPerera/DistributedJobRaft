@@ -96,6 +96,39 @@ Collect numerical data of test cases:
 - Collecting logs of container operations
 - Conduct simple analysis for documentation purposes (e.g. plots or graphs)
 
+
+
+## Future Enhancements
+
+By considering some listed enhancements, the Raft-based distributed job queue can evolve into a more robust, scalable, and feature-rich system capable of meeting the needs of a wide range of use cases.
+
+
+- Dynamic Clustering: 
+  By making nodes to join or leave the group whenever needed, making the system more adaptable to changes in node availability.
+
+- Fault Recovery Mechanisms:
+  Build in automatic recovery features to deal with node failures, ensuring that the system can quickly recover and continue functioning without interruption.
+
+- Performance Optimization:
+  Identify and fix any slowdowns in the system, such as reducing unnecessary communication overhead or making data replication more efficient,
+  to make the system faster and more responsive.
+
+- Enhanced Monitoring and Logging:
+   Incorporate external tools for monitor  how the system is doing and for tracking down and fixing any problems that come up.
+
+- Security Enhancements:
+   Can improve security by adding features like user authentication and encryption to protect sensitive data from unauthorized access.
+
+- Job Prioritization and Scheduling:
+   Give users more control over how jobs are handled, allowing them to set priorities and schedule tasks based on their needs.
+
+- Support for Event-Driven Architecture:
+   Enable the system to respond to events or messages, allowing for more flexible and efficient job handling.
+
+- Documentation and User Interface Improvements:
+   by improving documentation and creating a more user-friendly interfaces
+	
+
 ## Acknowledgments:
 - [Raft](https://raft.github.io/)
 - [Eli Bendersky's Raft Guide](https://eli.thegreenplace.net/2020/implementing-raft-part-0-introduction/)
