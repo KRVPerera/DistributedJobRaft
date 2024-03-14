@@ -24,11 +24,6 @@ Each node goes through the following states:
 ![Node state changes](docs%2Fimages%2Fraft_node_state_changes.png)
 
 
-
-Participating nodes must:
-- Exchange information (messages): RPC,
-- Log their behavior understandably: messages, events, actions, etc.
-
 ### Naming
 - Each node is given uniques `integer` number upon creation of the cluster.
 - Each node is also introduced to its peers in the cluster upon setup.
@@ -40,7 +35,6 @@ Participating nodes must:
 RPC calls are exactly the ones described in the Raft paper:
 - RequestVote
 - AppendEntries
-- RequestVoteResponse
 
 ### Fault tolerance
 
@@ -52,6 +46,8 @@ In this approach, fault tolerance is achieved by Leader election, Log replicatio
 
 - Term-based approach - Raft uses "terms", where each term start with leader election. This helps spot leader failures and trigger new elections if needed.
 
+- Raft persistent states are saved in SQLite database so that when a node restarts from failure it does not have to start fresh.
+
 ### Synchronization
 
 Raft achieves synchronization by bringing all nodes in the cluster into a consistent state.
@@ -60,48 +56,98 @@ Raft achieves synchronization by bringing all nodes in the cluster into a consis
 
 - After the leader is elected, it replicate it's log entries to the other nodes in the cluster. Before commiting a log entry, it ensures that it is safely replicated to majority of nodes. This makes sure that all nodes have the same log entries.
 
-- Commit log entries - // TODO
+- Raft has a commit mechanism to make sure that all nodes agree on which log entries are considered committed. Once a log entry has been replicated to a majority of nodes, the leader can commit the entry, and all nodes in the cluster will also commit it. This ensures that all nodes agree on the state of the replicated log.
 
 - Also, raft uses heartbeats and Append Entries RPCs to maintain synchronization and detect failures.
 
 - Term-based approch ensures that nodes are synchronized within the same term.
 
-Detailed descriptions of relevant principles covered in the course (architecture, processes, communication, naming, synchronization, consistency and replication, fault tolerance); irrelevant principles can be left out.
+### Consistency
+
+Raft nodes mostly rely on the leader to tell the nodes to commit the entries. Therefore we can say the cluster achieves eventual consistency.
+
+### Architecture and Processes
+
+Architecture is completely based on Raft paper. We dont have log compaction and cluster is static. Almost all the functionalities are written as go routienes and shared data is protected by mutex locks.
+
 
 ## Built with:
-Detailed description of the system functionality and how to run the implementation.
-
-- If you are familiar with a particular container technology, feel free to use it (Docker is not mandatory)
-- Any programming language can be used, such as: Python, Java, JavaScript, ..
-- Any communication protocol / Internet protocol suite can be used: HTTP(S), MQTT, AMQP, CoAP, ..
+   - Go language
+   - SQlite
+   - Docker
+   - TCP
 
 ## Getting Started:
-You can run the system on your local machine using docker. Look at `setup.sh` and `run.sh` for more details.
+Currently our containerized solution does not work properly. Therefore we have evaluated by creating servers in separate threads. They have full functionaluty except that they run on the same machine.
 
+To test docker containerized version you can run the system on your local machine using docker.
+`setup.sh` creates docker images and `run.sh` initializes the cluster.
 
+Configuration files for each node is in `config` folder. Code and scale to few number of nodes (tested upto 13) but only three docker images are created using config files.
 
 ## Results of the tests:
-Detailed description of the system evaluation
-Evaluate your implementation using selected criteria, for example:
-- Number of messages / lost messages, latencies, ...
-- Request processing with different payloads, ..
-- System throughput, ..
+
+### Test 1 : number of messages
+
+- scenario 1 : 100 message to the leader with 100 ms delays and 500 ms sleep after
+
+```
+go test -v ./raft -run TestEval_MessageCountLow
+```
+
+- scenario 2 : 2000 message to the leader with 100 ms delays and 500 ms sleep after
+
+```
+go test -v ./raft -run TestEval_MessageCountHigh
+```
+|Message count | Time Taken(s) | Through put(messages/s)|
+|--------------|---------------|------------------------|
+|100           | 13.19         | 7.6                    |
+|2000          |  266.83       | 7.5                    |
 
 
-Design two evaluation scenarios that you compare with each other, for example:
-- Small number / large number of messages
-- Small payload / big payload
+### Test 2 (Failed): payload size
+
+- scenario 1 : 1000 integer messages to the leader with 100 ms delays and 500 ms sleep after
+```
+go test -v ./raft -run TestEval_PayLoadSmall
+```
+
+- scenario 2 : 1000, 200 character long messages to the leader with 100 ms delays and 500 ms sleep after
+```
+go test -v ./raft -run TestEval_PayLoadLarge
+```
+
+|Message size  | Count | Time Taken(s) | Through put(messages/s)|
+|--------------|--------------|--------|------------------------|
+|4 bytes       |1000          | 123.44         | 8.10                    |
+|200 bytes     |1000 (Crashed around 475)  |  600       | 0.79 |
+
+
+### Test 3 (Failed cannot handle): payload size
+
+- scenario 1 : 1000 integer messages to the leader with 100 ms delays and 500 ms sleep after
+```
+go test -v ./raft -run TestEval_PayLoadSmall
+```
+
+- scenario 2 : 1000, 640 character long messages to the leader with 100 ms delays and 500 ms sleep after
+```
+go test -v ./raft -run TestEval_PayLoadLarge
+```
+
+|Message size  | Count | Time Taken(s) | Through put(messages/s)|
+|--------------|--------------|--------|------------------------|
+|4 bytes       |1000          | 123.44         | 8.10                    |
+|640 bytes     |1000 (Crashed around 475)  |  600       | 0.79 |
 
 Collect numerical data of test cases:
 - Collecting logs of container operations
 - Conduct simple analysis for documentation purposes (e.g. plots or graphs)
 
-
-
 ## Future Enhancements
 
 By considering some listed enhancements, the Raft-based distributed job queue can evolve into a more robust, scalable, and feature-rich system capable of meeting the needs of a wide range of use cases.
-
 
 - Dynamic Clustering: 
   By making nodes to join or leave the group whenever needed, making the system more adaptable to changes in node availability.

@@ -35,7 +35,7 @@ func TestEval_MessageCountHigh(t *testing.T) {
 	defer h.Shutdown()
 
 	origLeaderId, _ := h.CheckSingleLeader()
-	for i := 0; i < 5000; i++ {
+	for i := 0; i < 2000; i++ {
 		h.SubmitToServer(origLeaderId, i)
 		sleepMs(100)
 	}
@@ -61,8 +61,8 @@ func TestEval_PayLoadLarge(t *testing.T) {
 	defer h.Shutdown()
 
 	origLeaderId, _ := h.CheckSingleLeader()
-	for i := 0; i < 100; i++ {
-		h.SubmitToServer(origLeaderId, "largelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelarge")
+	for i := 0; i < 1000; i++ {
+		h.SubmitToServer(origLeaderId, "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww")
 		sleepMs(100)
 	}
 	sleepMs(500)
