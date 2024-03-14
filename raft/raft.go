@@ -168,6 +168,7 @@ func (cm *ConsensusModule) Report() (id int, term int, isLeader bool) {
 func (cm *ConsensusModule) Submit(command interface{}) bool {
 	cm.mu.Lock()
 	cm.dlog("Submit received by %v: %v", cm.state, command)
+	cm.EvaluationDump("Submit received by %v: %v", cm.state, command)
 	if cm.state == Leader {
 		cm.log = append(cm.log, LogEntry{Command: command, Term: cm.currentTerm})
 		cm.persistToStorage()

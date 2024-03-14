@@ -523,6 +523,10 @@ func (h *Harness) SubmitToServer(serverId int, cmd interface{}) bool {
 	return h.cluster[serverId].cm.Submit(cmd)
 }
 
+func (h *SqliteHarness) SubmitToServer(serverId int, cmd interface{}) bool {
+	return h.cluster[serverId].cm.Submit(cmd)
+}
+
 func tlog(format string, a ...interface{}) {
 	format = "[TEST] " + format
 	log.Printf(format, a...)

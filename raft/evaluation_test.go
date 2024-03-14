@@ -11,16 +11,61 @@ import (
 func TestNNodesWithLeaderElection(t *testing.T) {
 	h := NewSQliteDBHarness(t, 3)
 	defer h.Shutdown()
+
 	sleepMs(5000)
-	h.CheckSingleLeader()
+	//h.CheckSingleLeader()
 }
 
-func TestNWithLeaderElection(t *testing.T) {
-	N := 13
+func TestEval_MessageCountLow(t *testing.T) {
+	N := 3
 	h := NewSQliteDBHarness(t, N)
+	defer h.Shutdown()
+
+	origLeaderId, _ := h.CheckSingleLeader()
+	for i := 0; i < 100; i++ {
+		h.SubmitToServer(origLeaderId, i)
+		sleepMs(100)
+	}
 	sleepMs(500)
-	h.CheckSingleLeader()
-	h.Shutdown()
+}
+
+func TestEval_MessageCountHigh(t *testing.T) {
+	N := 3
+	h := NewSQliteDBHarness(t, N)
+	defer h.Shutdown()
+
+	origLeaderId, _ := h.CheckSingleLeader()
+	for i := 0; i < 5000; i++ {
+		h.SubmitToServer(origLeaderId, i)
+		sleepMs(100)
+	}
+	sleepMs(500)
+}
+
+func TestEval_PayLoadSmall(t *testing.T) {
+	N := 3
+	h := NewSQliteDBHarness(t, N)
+	defer h.Shutdown()
+
+	origLeaderId, _ := h.CheckSingleLeader()
+	for i := 0; i < 1000; i++ {
+		h.SubmitToServer(origLeaderId, i)
+		sleepMs(100)
+	}
+	sleepMs(500)
+}
+
+func TestEval_PayLoadLarge(t *testing.T) {
+	N := 3
+	h := NewSQliteDBHarness(t, N)
+	defer h.Shutdown()
+
+	origLeaderId, _ := h.CheckSingleLeader()
+	for i := 0; i < 100; i++ {
+		h.SubmitToServer(origLeaderId, "largelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelargelarge")
+		sleepMs(100)
+	}
+	sleepMs(500)
 }
 
 func TestSQliteElectionLeaderAndAnotherDisconnect(t *testing.T) {

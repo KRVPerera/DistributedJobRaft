@@ -73,7 +73,7 @@ def parseFile(filename):
 
 def main():
     # Get the filename from command line arguments
-    filename = "./logs/sample.log"
+    filename = "./logs/data.log"
     if len(sys.argv) >= 2:
         filename = sys.argv[1]
 

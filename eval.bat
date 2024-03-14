@@ -1,1 +1,1 @@
-go test -v ./raft -run TestNNodesWithLeaderElection
+go test -v ./raft -run TestEval_MessageCountHigh > raft_test.log
