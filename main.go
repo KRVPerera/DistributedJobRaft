@@ -47,7 +47,7 @@ func main() {
 	// Create a sample config
 	cfg, err := config.LoadConfigFromXML("config/config.xml")
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Printf("Failed to load config: %v", err)
 	}
 	log.Printf("Loaded config: %+v\n", cfg)
 
@@ -85,7 +85,7 @@ func main() {
 			// break address to host and port
 			err := ns.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
 			if err != nil {
-				log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+				log.Printf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
 			} else {
 				count++
 			}
@@ -102,7 +102,7 @@ func main() {
 	//	// break address to host and port
 	//	err := singleServer2.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
 	//	if err != nil {
-	//		log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+	//		log.Printf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
 	//	}
 	//}
 	//
@@ -111,7 +111,7 @@ func main() {
 	//	// break address to host and port
 	//	err := singleServer3.ConnectToPeerStringAddress(peer.PeerID, peer.PeerAddress)
 	//	if err != nil {
-	//		log.Fatalf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
+	//		log.Printf("Failed to connect to peer : %d, peer address : %s, error : %v\n", peer.PeerID, peer.PeerAddress, err)
 	//	}
 	//}
 	close(readyChan)
