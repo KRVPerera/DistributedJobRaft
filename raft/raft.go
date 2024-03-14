@@ -16,8 +16,9 @@ import (
 	"time"
 )
 
-const DebugCM = 1
-const InfoCM = 1
+const DebugCM = 0
+const InfoCM = 0
+const EvalCM = 1
 
 // CommitEntry is the data reported by Raft to the commit channel. Each commit
 // entry notifies the client that consensus was reached on a command and it can
@@ -257,6 +258,13 @@ func (cm *ConsensusModule) dinfo(format string, args ...interface{}) {
 	}
 }
 
+func (cm *ConsensusModule) EvaluationDump(format string, args ...interface{}) {
+	if EvalCM > 0 {
+		format = fmt.Sprintf("EvalDump::[%d]::Status::[%s]::Name::[%d]", cm.id, cm.state.String(), cm.id) + format
+		log.Printf(format, args...)
+	}
+}
+
 // See figure 2 in the paper.
 type RequestVoteArgs struct {
 	Term         int // candidate's term
@@ -279,7 +287,7 @@ func (cm *ConsensusModule) RequestVote(args RequestVoteArgs, reply *RequestVoteR
 	}
 	lastLogIndex, lastLogTerm := cm.lastLogIndexAndTerm()
 	cm.dlog("RequestVote: %+v [currentTerm=%d, votedFor=%d, log index/term=(%d, %d)]", args, cm.currentTerm, cm.votedFor, lastLogIndex, lastLogTerm)
-
+	cm.EvaluationDump("RequestVote: %+v [currentTerm=%d, votedFor=%d, log index/term=(%d, %d)]", args, cm.currentTerm, cm.votedFor, lastLogIndex, lastLogTerm)
 	if args.Term > cm.currentTerm {
 		cm.dlog("... term out of date in RequestVote")
 		cm.becomeFollower(args.Term)
@@ -331,6 +339,7 @@ func (cm *ConsensusModule) AppendEntries(args AppendEntriesArgs, reply *AppendEn
 		return nil
 	}
 	cm.dlog("AppendEntries: %+v", args)
+	cm.EvaluationDump("AppendEntries: %+v", args)
 
 	if args.Term > cm.currentTerm {
 		cm.dlog("... term out of date in AppendEntries")
