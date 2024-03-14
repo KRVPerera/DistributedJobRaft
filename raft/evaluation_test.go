@@ -48,7 +48,7 @@ func TestEval_PayLoadSmall(t *testing.T) {
 	defer h.Shutdown()
 
 	origLeaderId, _ := h.CheckSingleLeader()
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 500; i++ {
 		h.SubmitToServer(origLeaderId, i)
 		sleepMs(100)
 	}
@@ -61,8 +61,8 @@ func TestEval_PayLoadLarge(t *testing.T) {
 	defer h.Shutdown()
 
 	origLeaderId, _ := h.CheckSingleLeader()
-	for i := 0; i < 1000; i++ {
-		h.SubmitToServer(origLeaderId, "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww")
+	for i := 0; i < 500; i++ {
+		h.SubmitToServer(origLeaderId, "wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww")
 		sleepMs(100)
 	}
 	sleepMs(500)

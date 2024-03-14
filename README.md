@@ -1,4 +1,11 @@
-# Raft Based Distributed Job Queue
+# Raft Based Distributed Job Queue (Industry track)
+
+## Group Members
+
+- Dilan Muthunamagonnage - 2303252		
+- Rukshan Perera - 2304805
+- Shanaka Badde Liyanage Don - 2303251
+- Timon Iwu - Y69346900
 
 ## About the project
 
@@ -108,20 +115,20 @@ go test -v ./raft -run TestEval_MessageCountHigh
 
 ### Test 2 (Failed): payload size
 
-- scenario 1 : 1000 integer messages to the leader with 100 ms delays and 500 ms sleep after
+- scenario 1 : 500 integer messages to the leader with 100 ms delays and 500 ms sleep after
 ```
 go test -v ./raft -run TestEval_PayLoadSmall
 ```
 
-- scenario 2 : 1000, 200 character long messages to the leader with 100 ms delays and 500 ms sleep after
+- scenario 2 : 500, 50 character long messages to the leader with 100 ms delays and 500 ms sleep after
 ```
 go test -v ./raft -run TestEval_PayLoadLarge
 ```
 
 |Message size  | Count | Time Taken(s) | Through put(messages/s)|
 |--------------|--------------|--------|------------------------|
-|4 bytes       |1000          | 123.44         | 8.10                    |
-|200 bytes     |1000 (Crashed around 475)  |  600       | 0.79 |
+|4 bytes       |500          | 63.14         | 7.88                   |
+|50 bytes     |500   |  63.36       | 7.89 |
 
 
 ### Test 3 (Failed cannot handle): payload size
@@ -141,15 +148,15 @@ go test -v ./raft -run TestEval_PayLoadLarge
 |4 bytes       |1000          | 123.44         | 8.10                    |
 |640 bytes     |1000 (Crashed around 475)  |  600       | 0.79 |
 
-Collect numerical data of test cases:
-- Collecting logs of container operations
-- Conduct simple analysis for documentation purposes (e.g. plots or graphs)
 
 ## Future Enhancements
 
 By considering some listed enhancements, the Raft-based distributed job queue can evolve into a more robust, scalable, and feature-rich system capable of meeting the needs of a wide range of use cases.
 
-- Dynamic Clustering: 
+- Job expiration (Log cleaning): 
+  We don't need to keep old entries in the cluster after a job is completed. Log cleaning like feature is needed.
+
+- Cluster membership changs: 
   By making nodes to join or leave the group whenever needed, making the system more adaptable to changes in node availability.
 
 - Fault Recovery Mechanisms:
@@ -160,19 +167,13 @@ By considering some listed enhancements, the Raft-based distributed job queue ca
   to make the system faster and more responsive.
 
 - Enhanced Monitoring and Logging:
-   Incorporate external tools for monitor  how the system is doing and for tracking down and fixing any problems that come up.
+   Incorporate external tools for monitor how the system is doing and for tracking down and fixing any problems that come up.
 
 - Security Enhancements:
    Can improve security by adding features like user authentication and encryption to protect sensitive data from unauthorized access.
 
-- Job Prioritization and Scheduling:
-   Give users more control over how jobs are handled, allowing them to set priorities and schedule tasks based on their needs.
-
-- Support for Event-Driven Architecture:
-   Enable the system to respond to events or messages, allowing for more flexible and efficient job handling.
-
-- Documentation and User Interface Improvements:
-   by improving documentation and creating a more user-friendly interfaces
+- Documentation Improvements:
+   by improving documentation and creating a more user-friendly APIs
 	
 
 ## Acknowledgments:

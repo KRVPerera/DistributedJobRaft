@@ -1,3 +1,7 @@
+#
+#  Created by Rukshan Perera (rukshan.perera@student.oulu.fi)
+#
+
 # Use the official Go image as the base image
 FROM golang:alpine3.18
 
@@ -27,7 +31,7 @@ EXPOSE 2463
 # Copy the rest of the project files
 COPY . .
 COPY ./config/$CONFIG_FILE_PATH config/config.xml
-RUN go build -ldflags='-s -w -extldflags "-static"' -o bin
+RUN go build -o bin
 
-# Set the entry point for the container
+# Set the entry point f-ldflags='-extldflags "-static"'or the container
 ENTRYPOINT ["/app/bin"]
