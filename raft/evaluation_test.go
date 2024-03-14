@@ -11,6 +11,7 @@ import (
 func TestNNodesWithLeaderElection(t *testing.T) {
 	h := NewSQliteDBHarness(t, 3)
 	defer h.Shutdown()
+	sleepMs(5000)
 	h.CheckSingleLeader()
 }
 

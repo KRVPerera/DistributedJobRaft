@@ -260,7 +260,7 @@ func (cm *ConsensusModule) dinfo(format string, args ...interface{}) {
 
 func (cm *ConsensusModule) EvaluationDump(format string, args ...interface{}) {
 	if EvalCM > 0 {
-		format = fmt.Sprintf("EvalDump::[%d]::Status::[%s]::Name::[%d]", cm.id, cm.state.String(), cm.id) + format
+		format = fmt.Sprintf("EvalDump::[%d]::Status::[%s]::Name::[%d] : ", cm.id, cm.state.String(), cm.id) + format
 		log.Printf(format, args...)
 	}
 }
@@ -582,6 +582,7 @@ func (cm *ConsensusModule) startLeader() {
 			doSend := false
 			select {
 			case <-t.C:
+
 				doSend = true
 
 				// Reset timer to fire again after heartbeatTimeout.
@@ -600,7 +601,6 @@ func (cm *ConsensusModule) startLeader() {
 				}
 				t.Reset(heartbeatTimeout)
 			}
-
 			if doSend {
 				// If this isn't a leader any more, stop the heartbeat loop.
 				cm.mu.Lock()
@@ -647,6 +647,7 @@ func (cm *ConsensusModule) leaderSendAppendEntries() {
 			}
 			cm.mu.Unlock()
 			cm.dlog("sending AppendEntries to %v: ni=%d, args=%+v", peerId, ni, args)
+			cm.EvaluationDump("sending AppendEntries to %v: ni=%d, args=%+v", peerId, ni, args)
 			var reply AppendEntriesReply
 			if err := cm.server.Call(peerId, "ConsensusModule.AppendEntries", args, &reply); err == nil {
 				cm.mu.Lock()
